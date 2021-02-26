@@ -8,17 +8,22 @@
 import UIKit
 
 class ViewController: UIViewController {
+    @IBOutlet var textView: UITextView!
+
+    private var timer: Timer?
+    private var timeInterval: TimeInterval = 5.0
+
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        loadData()
+        timer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector(loadData), userInfo: nil, repeats: true)
     }
 
-    func loadData() {
+    @objc func loadData() {
         let request = ZKRURLRequest("https://api.github.com/")
-        request.sendAsynchronousWithCompletion { (_, response: ZKRURLResponse<Any>?, _) in
-            
-            debugPrint(response)
+        request.sendAsynchronousWithCompletion { (_, result: Any?, _) in
+            DispatchQueue.main.async { [self] in
+                textView.text = result as? String
+            }
         }
     }
 }

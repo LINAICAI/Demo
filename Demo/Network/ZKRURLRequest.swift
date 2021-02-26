@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 public class ZKRURLRequest {
-    public typealias ZKRURLRequestCompletion<T> = (ZKRURLRequest?, ZKRURLResponse<T>?, ZKRURLRequestError?) -> Void
+    public typealias ZKRURLRequestCompletion = (ZKRURLRequest?, Any?, ZKRURLRequestError?) -> Void
 
     public var url: String?
     public var parameters: [String: Any]?
@@ -29,22 +29,8 @@ public class ZKRURLRequest {
 
     private let session = Alamofire.Session(configuration: URLSessionConfiguration.default)
 
-    /// 同步发送请求
-    public func sendSynchronous<T>() -> ZKRURLResponse<T>? {
-        let semaphore = DispatchSemaphore(value: 0)
-        var result: ZKRURLResponse<T>?
-        sendAsynchronousWithCompletion { (_, response: ZKRURLResponse<T>?, _) in
-            result = response
-            semaphore.signal()
-        }
-
-        semaphore.wait()
-
-        return result
-    }
-
     /// 异步发送请求
-    public func sendAsynchronousWithCompletion<T>(completion: ZKRURLRequestCompletion<T>?) {
+    public func sendAsynchronousWithCompletion(completion: ZKRURLRequestCompletion?) {
         var url: String!
         var parameters: Parameters!
 
@@ -64,11 +50,10 @@ public class ZKRURLRequest {
             .validate(contentType: ["application/json"])
             .responseString(completionHandler: { response in
 
-                debugPrint("request:\(String(describing: response.request)) ")
-
                 switch response.result {
                 case .success:
-                    if let result = ZKRURLResponse<T>.deserialize(from: response.value) {
+
+                    if let result = response.value {
                         completion?(self, result, nil)
                     } else {
                         completion?(self, nil, ZKRURLRequestError(code: .invalidServerData))
